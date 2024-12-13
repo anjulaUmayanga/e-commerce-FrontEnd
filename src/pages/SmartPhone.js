@@ -1,24 +1,27 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, Card, CardMedia, CardContent, Button } from '@mui/material';
 import { useCart } from '../context/CartContext'; // Import Cart Context
-import logo from '../logo.png';
 import Footer from '../components/Footer';
-import iPhone14 from '../images/iphone14.jpg';
-import galaxyS23 from '../images/galaxyS23.jpg';
-import pixel8 from '../images/pixel8.jpg';
-
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const SmartPhone = () => {
   const { addToCart } = useCart();
   const navigate = useNavigate();  // Hook for navigation
 
-  const smartphones = [
-    { id: 1, name: 'iPhone 14 Pro', description: 'Apple smartphone with A16 Bionic chip', price: 999, image: iPhone14},
-    { id: 2, name: 'Samsung Galaxy S23', description: 'Samsung flagship phone with Snapdragon 8 Gen 2', price: 899, image: galaxyS23 },
-    { id: 3, name: 'Google Pixel 8', description: 'Google phone with AI-powered camera', price: 799, image: pixel8 },
-  ];
+  const [smartphones, setSmartphones] = useState([]);
+
+  // Fetch data from the API
+  useEffect(() => {
+    axios.get('http://localhost:3001/api/electronics/smartphone')
+      .then(response => {
+        setSmartphones(response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching smartphones:', error);
+      });
+  }, []);
 
   const handleAddToCart = (phone) => {
     addToCart(phone);
@@ -39,8 +42,14 @@ const SmartPhone = () => {
         }}
       >
         {smartphones.map((phone) => (
-          <Card key={phone.id} sx={{ display: 'flex', flexDirection: 'column' }}>
-            <CardMedia component="img" alt={phone.name} image={phone.image} sx={{ height: 250 }} />
+          <Card key={phone._id} sx={{ display: 'flex', flexDirection: 'column' }}>
+            <CardMedia
+              component="img"
+              alt={phone.name}
+              image={`/images/${phone.image}.jpg`} // Append the .jpg extension to the image name from DB
+              
+              sx={{ height: 250 }}
+            />
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 {phone.name}

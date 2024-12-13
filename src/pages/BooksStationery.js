@@ -1,67 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, Card, CardMedia, CardContent, Button, TextField } from '@mui/material';
 import { useCart } from '../context/CartContext'; // Import Cart Context
 import Footer from '../components/Footer';
-import logo from '../logo.png';  // Optional: Logo for branding
-
 import { useNavigate } from 'react-router-dom';
-
-// Import book and stationery images
-import book1 from '../images/book1.jpg';  // Add appropriate book image
-import book2 from '../images/book2.jpg';  // Add appropriate book image
-import notebook from '../images/notebook.jpg';  // Add appropriate notebook image
-import pen from '../images/pen.jpg';  // Add appropriate pen image
-import markers from '../images/markers.jpg';  // Add appropriate markers image
-import backpack from '../images/backpack.jpg';  // Add appropriate backpack image
+import axios from 'axios';
 
 const BooksStationery = () => {
   const { addToCart } = useCart();
   const navigate = useNavigate();  // Hook for navigation
 
-  // State for search and selected category
+  // State for search, selected category, and items
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all'); // 'all', 'books', 'stationery'
+  const [items, setItems] = useState([]);
 
-  // Define books and stationery items for each category
-  const booksStationeryItems = {
-    books: [
-      { id: 1, name: 'The Great Gatsby', description: 'A classic novel by F. Scott Fitzgerald', price: 10.99, image: book1 },
-      { id: 2, name: 'To Kill a Mockingbird', description: 'A novel by Harper Lee', price: 12.99, image: book2 },
-    ],
-    stationery: [
-      { id: 3, name: 'Notebook', description: 'A pack of 3 lined notebooks', price: 5.99, image: notebook },
-      { id: 4, name: 'Pen Set', description: 'A set of 10 ballpoint pens', price: 3.99, image: pen },
-      { id: 5, name: 'Markers', description: 'A set of colorful markers for drawing and writing', price: 7.99, image: markers },
-      { id: 6, name: 'Backpack', description: 'A spacious backpack for books and stationery', price: 24.99, image: backpack },
-    ],
-  };
+  // Fetch books and stationery items from the API
+  useEffect(() => {
+    axios.get('http://localhost:3001/api/books')
+      .then((response) => {
+        setItems(response.data); // Set the items from the API response
+      })
+      .catch((error) => {
+        console.error('Error fetching books and stationery items:', error);
+      });
+  }, []);
 
   // Handle search term change
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value.toLowerCase());
   };
 
-  // Get all items combined for the 'All' category
-  const getAllItems = () => {
-    return [
-      ...booksStationeryItems.books,
-      ...booksStationeryItems.stationery,
-    ];
-  };
-
   // Filter items based on search term and selected category
   const getFilteredItems = () => {
-    let items = [];
-    // If selected category is 'all', combine all items
-    if (selectedCategory === 'all') {
-      items = getAllItems();
-    } else {
-      // Otherwise, use the selected category
-      items = booksStationeryItems[selectedCategory] || [];
+    let filteredItems = items;
+
+    // Filter based on selected category
+    if (selectedCategory !== 'all') {
+      filteredItems = items.filter(item => item.category === selectedCategory);
     }
 
     // Filter based on search term
-    return items.filter(item =>
+    return filteredItems.filter(item =>
       item.name.toLowerCase().includes(searchTerm) || item.description.toLowerCase().includes(searchTerm)
     );
   };
@@ -104,8 +83,13 @@ const BooksStationery = () => {
         }}
       >
         {getFilteredItems().map((item) => (
-          <Card key={item.id} sx={{ display: 'flex', flexDirection: 'column' }}>
-            <CardMedia component="img" alt={item.name} image={item.image} sx={{ height: 250 }} />
+          <Card key={item._id} sx={{ display: 'flex', flexDirection: 'column' }}>
+            <CardMedia
+              component="img"
+              alt={item.name}
+              image={`http://localhost:3000/images/${item.image}.jpg`} // API-based image path
+              sx={{ height: 250 }}
+            />
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 {item.name}

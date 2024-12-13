@@ -1,18 +1,10 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, Card, CardMedia, CardContent, Button, TextField } from '@mui/material';
 import { useCart } from '../context/CartContext'; // Import Cart Context
 import Footer from '../components/Footer';
-import logo from '../logo.png';  // Optional: Logo for branding
-
 import { useNavigate } from 'react-router-dom';
-
-// Import kitchen images
-import kitchenUtensil from '../images/kitchenUtensil.jpg';  // Add appropriate kitchen item image
-import cookwareSet from '../images/cookwareSet.jpg';    // Add appropriate cookware set image
-import blender from '../images/blender.jpg';      // Add appropriate blender image
-import microwave from '../images/microwave.jpg';  // Add appropriate microwave image
-import fridge from '../images/fridge.jpg';    // Add appropriate fridge image
-import toaster from '../images/toaster.jpg';      // Add appropriate toaster image
+import axios from 'axios';  // Import Axios for API calls
 
 const Kitchen = () => {
   const { addToCart } = useCart();
@@ -21,21 +13,33 @@ const Kitchen = () => {
   // State for search and selected category
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all'); // 'all', 'utensils', 'appliances', 'storage'
+  const [kitchenItems, setKitchenItems] = useState([]);  // State to hold kitchen items
+  const [loading, setLoading] = useState(false);  // State for loading status
+  const [error, setError] = useState(null);  // State for error handling
 
-  // Define kitchen items for each category
-  const kitchenItems = {
-    utensils: [
-      { id: 1, name: 'Stainless Steel Utensil Set', description: 'A complete set of high-quality kitchen utensils', price: 29.99, image: kitchenUtensil },
-      { id: 2, name: 'Cutlery Set', description: 'Elegant and durable cutlery set for daily use', price: 49.99, image: kitchenUtensil },
-    ],
-    appliances: [
-      { id: 3, name: 'Blender', description: 'Powerful blender for smoothies and shakes', price: 69.99, image: blender },
-      { id: 4, name: 'Microwave Oven', description: 'Compact microwave for quick and easy cooking', price: 99.99, image: microwave },
-    ],
-    storage: [
-      { id: 5, name: 'Food Storage Containers', description: 'Set of airtight food storage containers', price: 19.99, image: toaster },
-      { id: 6, name: 'Refrigerator', description: 'Energy-efficient refrigerator with spacious compartments', price: 399.99, image: fridge },
-    ],
+  // Fetch kitchen items based on selected category
+  const fetchKitchenItems = async (category) => {
+    setLoading(true);
+    setError(null);  // Reset error state before making a new request
+
+    let apiUrl = 'http://localhost:3001/api/kitchen'; // Default to main API
+    if (category === 'utensils') {
+      apiUrl = 'http://localhost:3001/api/kitchen/utensils';
+    } else if (category === 'appliances') {
+      apiUrl = 'http://localhost:3001/api/kitchen/appliances';
+    } else if (category === 'storage') {
+      apiUrl = 'http://localhost:3001/api/kitchen/storage';
+    }
+
+    try {
+      const response = await axios.get(apiUrl);
+      setKitchenItems(response.data);
+    } catch (error) {
+      setError('Error fetching kitchen items');
+      console.error('Error fetching kitchen items:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Handle search term change
@@ -43,26 +47,15 @@ const Kitchen = () => {
     setSearchTerm(e.target.value.toLowerCase());
   };
 
-  // Get all items combined for the 'All' category
-  const getAllItems = () => {
-    return [...kitchenItems.utensils, ...kitchenItems.appliances, ...kitchenItems.storage];
-  };
-
-  // Filter items based on search term and selected category
+  // Filter items based on search term
   const getFilteredItems = () => {
-    let items = [];
-    // If selected category is 'all', combine all items
-    if (selectedCategory === 'all') {
-      items = getAllItems();
-    } else {
-      // Otherwise, use the selected category
-      items = kitchenItems[selectedCategory] || [];
-    }
-
-    // Filter based on search term
-    return items.filter(item =>
-      item.name.toLowerCase().includes(searchTerm) || item.description.toLowerCase().includes(searchTerm)
-    );
+    return kitchenItems.filter(item => {
+      // Check if item.name and item.description are defined before calling toLowerCase()
+      const itemName = item.name ? item.name.toLowerCase() : '';
+      const itemDescription = item.description ? item.description.toLowerCase() : '';
+      
+      return itemName.includes(searchTerm) || itemDescription.includes(searchTerm);
+    });
   };
 
   // Handle add to cart
@@ -70,6 +63,10 @@ const Kitchen = () => {
     addToCart(item);
     navigate('/cart');  // Navigate to the cart page
   };
+
+  useEffect(() => {
+    fetchKitchenItems(selectedCategory);  // Fetch items when category changes
+  }, [selectedCategory]);
 
   return (
     <Box sx={{ p: 4, backgroundColor: '#FDF7F4', minHeight: '100vh' }}>
@@ -95,6 +92,12 @@ const Kitchen = () => {
         <Button variant="contained" color="primary" onClick={() => setSelectedCategory('all')}>All</Button>
       </Box>
 
+      {/* Loading Indicator */}
+      {loading && <Typography variant="h6" align="center">Loading...</Typography>}
+
+      {/* Error Message */}
+      {error && <Typography variant="h6" color="error" align="center">{error}</Typography>}
+
       <Box
         sx={{
           display: 'grid',
@@ -104,8 +107,14 @@ const Kitchen = () => {
         }}
       >
         {getFilteredItems().map((item) => (
-          <Card key={item.id} sx={{ display: 'flex', flexDirection: 'column' }}>
-            <CardMedia component="img" alt={item.name} image={item.image} sx={{ height: 250 }} />
+          <Card key={item._id} sx={{ display: 'flex', flexDirection: 'column' }}>
+            {/* Use public folder path for image */}
+            <CardMedia
+              component="img"
+              alt={item.name}
+              image={`http://localhost:3000/images/${item.image}.jpg`}  // Assuming image is stored in public/images
+              sx={{ height: 250 }}
+            />
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 {item.name}
@@ -128,12 +137,11 @@ const Kitchen = () => {
           </Card>
         ))}
       </Box>
-      <Box sx={{
-        marginTop:'20px'
-      }}>
+      
+      {/* Footer */}
+      <Box sx={{ marginTop: '20px' }}>
         <Footer />
       </Box>
-      
     </Box>
   );
 };

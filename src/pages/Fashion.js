@@ -1,66 +1,47 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, Card, CardMedia, CardContent, Button, TextField } from '@mui/material';
 import { useCart } from '../context/CartContext'; // Import Cart Context
 import Footer from '../components/Footer';
-import logo from '../logo.png';  // Optional: Logo for branding
-
 import { useNavigate } from 'react-router-dom';
-
-// Import fashion images
-import ladiesShirt from '../images/ladiesShirt.jpg';  // Add appropriate ladies fashion image
-import gentsShirt from '../images/gentsShirt.jpg';    // Add appropriate gents fashion image
-import kidsShirt from '../images/kidsShirt.jpg';      // Add appropriate kids fashion image
-import ladiesDress from '../images/ladiesDress.jpg';  // Add appropriate ladies fashion image
-import gentsJeans from '../images/gentsJeans.jpg';    // Add appropriate gents fashion image
-import kidsJeans from '../images/kidsJeans.jpg';      // Add appropriate kids fashion image
 
 const Fashion = () => {
   const { addToCart } = useCart();
   const navigate = useNavigate();  // Hook for navigation
 
-  // State for search and selected category
+  // State for search, selected category, and fashion items
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all'); // 'all', 'ladies', 'gents', 'kids'
+  const [fashionItems, setFashionItems] = useState([]);
 
-  // Define fashion items for each category
-  const fashionItems = {
-    ladies: [
-      { id: 1, name: 'Floral Summer Dress', description: 'A beautiful floral dress for summer', price: 79.99, image: ladiesDress },
-      { id: 2, name: 'Casual White Shirt', description: 'Simple white shirt, perfect for everyday wear', price: 49.99, image: ladiesShirt },
-    ],
-    gents: [
-      { id: 3, name: 'Slim Fit Jeans', description: 'Modern slim-fit jeans for gents', price: 69.99, image: gentsJeans },
-      { id: 4, name: 'Checked Shirt', description: 'Stylish checkered shirt for casual outings', price: 59.99, image: gentsShirt },
-    ],
-    kids: [
-      { id: 5, name: 'Cartoon Print T-Shirt', description: 'Fun and colorful t-shirt for kids', price: 19.99, image: kidsShirt },
-      { id: 6, name: 'Kids Denim Jeans', description: 'Comfortable jeans for kids', price: 29.99, image: kidsJeans },
-    ],
-  };
+  // Fetch fashion items based on category
+  useEffect(() => {
+    const fetchItems = async () => {
+      try {
+        let url = 'http://localhost:3001/api/fashions'; // Default URL for all items
+        if (selectedCategory !== 'all') {
+          url = `http://localhost:3001/api/fashions/${selectedCategory}`;
+        }
+
+        const response = await fetch(url);
+        const data = await response.json();
+        setFashionItems(data); // Set fashion items from API response
+      } catch (error) {
+        console.error('Error fetching fashion items:', error);
+      }
+    };
+
+    fetchItems();
+  }, [selectedCategory]); // Fetch items whenever category changes
 
   // Handle search term change
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value.toLowerCase());
   };
 
-  // Get all items combined for the 'All' category
-  const getAllItems = () => {
-    return [...fashionItems.ladies, ...fashionItems.gents, ...fashionItems.kids];
-  };
-
-  // Filter items based on search term and selected category
+  // Filter items based on search term
   const getFilteredItems = () => {
-    let items = [];
-    // If selected category is 'all', combine all items
-    if (selectedCategory === 'all') {
-      items = getAllItems();
-    } else {
-      // Otherwise, use the selected category
-      items = fashionItems[selectedCategory] || [];
-    }
-
-    // Filter based on search term
-    return items.filter(item =>
+    return fashionItems.filter(item =>
       item.name.toLowerCase().includes(searchTerm) || item.description.toLowerCase().includes(searchTerm)
     );
   };
@@ -76,7 +57,7 @@ const Fashion = () => {
       <Typography variant="h3" align="center" gutterBottom>
         Fashion
       </Typography>
-      
+
       {/* Search Bar */}
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'center' }}>
         <TextField
@@ -104,8 +85,13 @@ const Fashion = () => {
         }}
       >
         {getFilteredItems().map((item) => (
-          <Card key={item.id} sx={{ display: 'flex', flexDirection: 'column' }}>
-            <CardMedia component="img" alt={item.name} image={item.image} sx={{ height: 250 }} />
+          <Card key={item._id} sx={{ display: 'flex', flexDirection: 'column' }}>
+            <CardMedia
+              component="img"
+              alt={item.name}
+              image={`http://localhost:3000/images/${item.image}.jpg`} // Correct image path with extension
+              sx={{ height: 250 }}
+            />
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 {item.name}
@@ -128,12 +114,10 @@ const Fashion = () => {
           </Card>
         ))}
       </Box>
-      <Box sx={{
-        marginTop:'20px'
-      }}>
+
+      <Box sx={{ marginTop: '20px' }}>
         <Footer />
       </Box>
-      
     </Box>
   );
 };

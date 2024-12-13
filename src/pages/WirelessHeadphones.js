@@ -1,24 +1,27 @@
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, Card, CardMedia, CardContent, Button } from '@mui/material';
 import { useCart } from '../context/CartContext'; // Import Cart Context
-import logo from '../logo.png';
 import Footer from '../components/Footer';
-import sonyWH1000XM4 from '../images/sonyWH1000XM4.jpg';  // Add appropriate headphone image
-import boseQuietComfort35 from '../images/boseQuietComfort35.jpg';  // Add appropriate headphone image
-import sennheiserMomentum from '../images/sennheiserMomentum.jpg';  // Add appropriate headphone image
-
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const Headphones = () => {
   const { addToCart } = useCart();
   const navigate = useNavigate();  // Hook for navigation
 
-  // Define headphone data
-  const headphones = [
-    { id: 1, name: 'Sony WH-1000XM4', description: 'Wireless noise-canceling headphones with 30-hour battery life', price: 349, image: sonyWH1000XM4 },
-    { id: 2, name: 'Bose QuietComfort 35 II', description: 'Bluetooth over-ear headphones with noise canceling', price: 299, image: boseQuietComfort35 },
-    { id: 3, name: 'Sennheiser Momentum 3', description: 'Premium over-ear headphones with excellent sound quality and noise canceling', price: 399, image: sennheiserMomentum },
-  ];
+  const [headphones, setHeadphones] = useState([]);
+
+  // Fetch data from the API
+  useEffect(() => {
+    axios.get('http://localhost:3001/api/electronics/headphone')
+      .then(response => {
+        setHeadphones(response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching headphones:', error);
+      });
+  }, []);
 
   const handleAddToCart = (headphone) => {
     addToCart(headphone);
@@ -39,8 +42,13 @@ const Headphones = () => {
         }}
       >
         {headphones.map((headphone) => (
-          <Card key={headphone.id} sx={{ display: 'flex', flexDirection: 'column' }}>
-            <CardMedia component="img" alt={headphone.name} image={headphone.image} sx={{ height: 250 }} />
+          <Card key={headphone._id} sx={{ display: 'flex', flexDirection: 'column' }}>
+            <CardMedia
+              component="img"
+              alt={headphone.name}
+              image={`http://localhost:3000/images/${headphone.image}.jpg`} // Use the image URL with the image name from DB
+              sx={{ height: 250 }}
+            />
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 {headphone.name}

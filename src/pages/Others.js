@@ -1,24 +1,27 @@
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, Card, CardMedia, CardContent, Button } from '@mui/material';
 import { useCart } from '../context/CartContext'; // Import Cart Context
-import logo from '../logo.png';
 import Footer from '../components/Footer';
-import canonEOSR5 from '../images/canonEOSR5.jpg';  // Add appropriate camera image
-import sonyAlpha7 from '../images/sonyAlpha7.jpg';  // Add appropriate camera image
-import powerAdapter from '../images/powerAdapter.jpg';  // Add appropriate power adapter image
-
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const Other = () => {
   const { addToCart } = useCart();
   const navigate = useNavigate();  // Hook for navigation
 
-  // Define product data (Cameras and Power Adapters)
-  const products = [
-    { id: 1, name: 'Canon EOS R5', description: 'Mirrorless camera with 45MP sensor and 8K video recording', price: 3899, image: canonEOSR5 },
-    { id: 2, name: 'Sony Alpha 7', description: 'Full-frame camera with 24.2MP and 4K video capability', price: 1999, image: sonyAlpha7 },
-    { id: 3, name: 'Power Adapter 65W', description: 'Universal power adapter for laptops with 65W output', price: 49, image: powerAdapter },
-  ];
+  const [products, setProducts] = useState([]);
+
+  // Fetch data from the API
+  useEffect(() => {
+    axios.get('http://localhost:3001/api/electronics/other')
+      .then(response => {
+        setProducts(response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching products:', error);
+      });
+  }, []);
 
   const handleAddToCart = (product) => {
     addToCart(product);
@@ -39,8 +42,13 @@ const Other = () => {
         }}
       >
         {products.map((product) => (
-          <Card key={product.id} sx={{ display: 'flex', flexDirection: 'column' }}>
-            <CardMedia component="img" alt={product.name} image={product.image} sx={{ height: 250 }} />
+          <Card key={product._id} sx={{ display: 'flex', flexDirection: 'column' }}>
+            <CardMedia
+              component="img"
+              alt={product.name}
+              image={`http://localhost:3000/images/${product.image}.jpg`} // Use the image URL with the image name from DB
+              sx={{ height: 250 }}
+            />
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 {product.name}
